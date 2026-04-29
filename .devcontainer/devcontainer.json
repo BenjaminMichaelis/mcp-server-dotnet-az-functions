@@ -1,0 +1,54 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+{
+	"name": "Functions Quickstarts Codespace - Aspire + .NET 10",
+	"dockerFile": "Dockerfile",
+	"features": {
+		"ghcr.io/microsoft/aspire-devcontainer-feature/aspire:2": {},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"enableNonRootDocker": true,
+			"moby": true
+		},
+		"ghcr.io/devcontainers/features/powershell:1": {},
+		"ghcr.io/devcontainers/features/azure-cli:1": {}
+	},
+	"hostRequirements": {
+		"cpus": 8,
+		"memory": "32gb",
+		"storage": "64gb"
+	},
+	"forwardPorts": [7071],
+	"portsAttributes": {
+		"7071": {
+			"label": "Azure Functions",
+			"onAutoForward": "notify"
+		}
+	},
+	"postCreateCommand": "bash -c 'grep -qxF \"export PROMPT_DIRTRIM=1\" ~/.bashrc || echo \"export PROMPT_DIRTRIM=1\" >> ~/.bashrc; mkdir -p ~/.azurite; cat .devcontainer/first-run-notice.txt || echo \"Setup completed\"'",
+	"postStartCommand": "dotnet dev-certs https --trust",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-dotnettools.csdevkit",
+				"ms-dotnettools.csharp",
+				"ms-dotnettools.vscode-dotnet-runtime",
+				"microsoft-aspire.aspire-vscode",
+				"ms-azuretools.vscode-bicep",
+				"ms-azuretools.vscode-docker",
+				"ms-azuretools.vscode-azurefunctions",
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"humao.rest-client",
+				"Azurite.azurite"
+			],
+			"settings": {
+				"dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+				"dotnet.symbolSearch.searchReferenceAssemblies": true,
+				"azureFunctions.showProjectWarning": false
+			}
+		}
+	},
+	"remoteUser": "vscode",
+	"shutdownAction": "stopContainer"
+}
+  

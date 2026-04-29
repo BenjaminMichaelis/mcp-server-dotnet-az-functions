@@ -1,0 +1,22 @@
+{
+    "version": "2.0",
+    "extensions": {
+        "mcp": {
+            "serverName": "MCP Showcase Server",
+            "serverVersion": "1.0.0",
+            "instructions": "All-in-one MCP server showcasing tools, resources, prompts, and MCP Apps. Includes snippets (blob storage), weather, QR codes, badges, authentication, and interactive dashboards.",
+            "system": {
+                "webhookAuthorizationLevel": "Anonymous"
+            }
+        }    
+    },
+    "logging": {
+        "applicationInsights": {
+            "samplingSettings": {
+                "isEnabled": true,
+                "excludedTypes": "Request"
+            },
+            "enableLiveMetricsFilters": true
+        }
+    }
+}

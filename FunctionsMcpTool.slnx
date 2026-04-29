@@ -1,0 +1,13 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/McpRunTimer/McpRunTimer.csproj" />
+  </Folder>
+  <Project Path="FunctionsMcpTool.AppHost/FunctionsMcpTool.AppHost.csproj" />
+  <Project Path="FunctionsMcpTool.ServiceDefaults/FunctionsMcpTool.ServiceDefaults.csproj" />
+  <Project Path="src/FunctionsMcpTool/FunctionsMcpTool.csproj" />
+</Solution>

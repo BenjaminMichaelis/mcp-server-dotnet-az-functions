@@ -1,0 +1,6 @@
+{
+  "appHost": {
+    "language": "csharp",
+    "path": "FunctionsMcpTool.AppHost/FunctionsMcpTool.AppHost.csproj"
+  }
+}

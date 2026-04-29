@@ -1,0 +1,22 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.2.4">
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\FunctionsMcpTool\FunctionsMcpTool.csproj" />
+    <ProjectReference Include="..\src\McpRunTimer\McpRunTimer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.Functions" />
+    <PackageReference Include="Aspire.Hosting.JavaScript" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>9a33a5ad-da24-4f54-82f9-80f6b25a92e3</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

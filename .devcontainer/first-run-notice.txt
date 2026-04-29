@@ -1,0 +1,23 @@
+👋 Welcome to the Functions + Aspire dev container.
+This environment includes .NET 10, the Aspire CLI, Docker-in-Docker, Azure Functions Core Tools, Azure CLI, azd, Node.js, MCP Inspector, and Azurite.
+
+Run the full local experience with the Aspire AppHost:
+```
+cd src/McpWeatherApp/app && npm install && npm run build && cd ../../..
+cd src/FunctionsMcpApp/app && npm install && npm run build && cd ../../..
+aspire start --isolated
+```
+
+To run a single Function app instead:
+```
+cd src/FunctionsMcpTool
+func start
+```
+
+Start Azurite manually only when running a single Function app outside the AppHost:
+```
+azurite --location ~/.azurite
+```
+
+📚 Aspire docs: https://aspire.dev/get-started/dev-containers/
+📚 Azure Functions docs: https://learn.microsoft.com/en-us/azure/azure-functions/

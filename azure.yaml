@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: remote-mcp-functions-dotnet
+metadata:
+  template: remote-mcp-functions-dotnet@1.0.1
+services:
+  tools:
+    project: ./src/FunctionsMcpTool/
+    language: dotnet
+    host: function
+  timer:
+    project: ./src/McpRunTimer/
+    language: dotnet
+    host: function
