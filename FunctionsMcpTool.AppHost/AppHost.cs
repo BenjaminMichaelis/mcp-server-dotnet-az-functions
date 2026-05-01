@@ -34,18 +34,24 @@ var timerAppUiWatch = builder.AddJavaScriptApp("timer-app-ui-watch", timerAppUiP
     .WithNpm(install: false)
     .WaitForCompletion(timerAppUiBuild);
 
-// ─── Function App projects ─────────────────────────────────────────
+// ─── Storage ───────────────────────────────────────────────────────
 var funcStorage = builder.AddAzureStorage("func-storage").RunAsEmulator();
 
+// ─── mcp-run-timer + its inspector ────────────────────────────────
 var mcpRunTimer = builder.AddAzureFunctionsProject<Projects.McpRunTimer>("mcp-run-timer")
-    .WithHostStorage(funcStorage)
     .WithHostStorage(funcStorage)
     .WithExternalHttpEndpoints()
     .WaitForCompletion(timerAppUiBuild)
     .WaitForStart(timerAppUiWatch);
 
+timerAppUiBuild.WithParentRelationship(mcpRunTimer);
+timerAppUiWatch.WithParentRelationship(mcpRunTimer);
+
+builder.AddFunctionsMcpInspector("mcp-inspector-timer", mcpRunTimer,
+    McpInspectorTimerClientPort, McpInspectorTimerServerPort, McpEndpointPath);
+
+// ─── functions-mcp-tool + its inspector ───────────────────────────
 var functionsMcpTool = builder.AddAzureFunctionsProject<Projects.FunctionsMcpTool>("functions-mcp-tool")
-    .WithHostStorage(funcStorage)
     .WithHostStorage(funcStorage)
     .WithExternalHttpEndpoints()
     .WaitForCompletion(showcaseAppUiBuild)
@@ -53,67 +59,12 @@ var functionsMcpTool = builder.AddAzureFunctionsProject<Projects.FunctionsMcpToo
     .WaitForCompletion(showcaseWeatherUiBuild)
     .WaitForStart(showcaseWeatherUiWatch);
 
-// Parent relationships for dashboard grouping
-timerAppUiBuild.WithParentRelationship(mcpRunTimer);
-timerAppUiWatch.WithParentRelationship(mcpRunTimer);
 showcaseAppUiBuild.WithParentRelationship(functionsMcpTool);
 showcaseAppUiWatch.WithParentRelationship(functionsMcpTool);
 showcaseWeatherUiBuild.WithParentRelationship(functionsMcpTool);
 showcaseWeatherUiWatch.WithParentRelationship(functionsMcpTool);
 
-// ─── MCP Inspectors (one per server) ──────────────────────────────
-builder.AddMcpInspector("mcp-inspector-timer", options =>
-    {
-        options.ClientPort = McpInspectorTimerClientPort;
-        options.ServerPort = McpInspectorTimerServerPort;
-        options.InspectorVersion = "0.21.2";
-    })
-    .WithMcpServer(mcpRunTimer, isDefault: true, path: McpEndpointPath)
-    .WithUrls(context =>
-    {
-        foreach (var url in context.Urls)
-        {
-            var isClientUrl = string.Equals(url.DisplayText, "Client", StringComparison.Ordinal) ||
-                url.Url.Contains($":{McpInspectorTimerClientPort}/", StringComparison.Ordinal);
-
-            if (!isClientUrl ||
-                url.Url.Contains("MCP_PROXY_PORT=", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var separator = url.Url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
-            url.Url = $"{url.Url}{separator}MCP_PROXY_PORT={McpInspectorTimerServerPort}";
-        }
-
-        return Task.CompletedTask;
-    });
-
-builder.AddMcpInspector("mcp-inspector-showcase", options =>
-    {
-        options.ClientPort = McpInspectorShowcaseClientPort;
-        options.ServerPort = McpInspectorShowcaseServerPort;
-        options.InspectorVersion = "0.21.2";
-    })
-    .WithMcpServer(functionsMcpTool, isDefault: true, path: McpEndpointPath)
-    .WithUrls(context =>
-    {
-        foreach (var url in context.Urls)
-        {
-            var isClientUrl = string.Equals(url.DisplayText, "Client", StringComparison.Ordinal) ||
-                url.Url.Contains($":{McpInspectorShowcaseClientPort}/", StringComparison.Ordinal);
-
-            if (!isClientUrl ||
-                url.Url.Contains("MCP_PROXY_PORT=", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var separator = url.Url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
-            url.Url = $"{url.Url}{separator}MCP_PROXY_PORT={McpInspectorShowcaseServerPort}";
-        }
-
-        return Task.CompletedTask;
-    });
+builder.AddFunctionsMcpInspector("mcp-inspector-showcase", functionsMcpTool,
+    McpInspectorShowcaseClientPort, McpInspectorShowcaseServerPort, McpEndpointPath);
 
 builder.Build().Run();
