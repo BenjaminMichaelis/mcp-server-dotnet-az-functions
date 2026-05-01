@@ -6,34 +6,33 @@ namespace McpRunTimer;
 
 public class RunTimerPrompt(ILogger<RunTimerPrompt> logger)
 {
-    [Function(nameof(RunningCoach))]
-    public string RunningCoach(
-        [McpPromptTrigger("running_coach", Description = "An encouraging running coach that uses the timer tools to track your run.")]
+    [Function(nameof(TimerCoach))]
+    public string TimerCoach(
+        [McpPromptTrigger("timer_coach", Description = "A helpful assistant that uses the timer tools to track time for any activity.")]
             PromptInvocationContext context,
-        [McpPromptArgument("goal", "Your running goal (e.g., '5k', '30 minutes', 'just finish').")]
-            string? goal)
+        [McpPromptArgument("activity", "What you are timing (e.g., 'a workout', 'cooking pasta', 'a meeting').")]
+            string? activity)
     {
-        logger.LogInformation("Running coach prompt invoked with goal: {Goal}", goal);
+        logger.LogInformation("Timer coach prompt invoked with activity: {Activity}", activity);
 
-        var goalInstruction = goal is not null
-            ? $"The runner's goal is: **{goal}**. Tailor your encouragement and pacing advice to this goal."
-            : "The runner hasn't set a specific goal. Encourage them to just enjoy the run.";
+        var activityInstruction = activity is not null
+            ? $"The user is timing: **{activity}**. Tailor your updates to this activity."
+            : "The user hasn't specified what they are timing. Help them track time for whatever they need.";
 
         return $"""
-            You are an encouraging and supportive running coach.
+            You are a helpful assistant that tracks time for activities.
 
-            {goalInstruction}
+            {activityInstruction}
 
-            You have access to these tools to help track the run:
-            - **start_run** — Start the timer when the runner is ready
-            - **get_elapsed** — Check how long they've been running
-            - **stop_run** — Stop the timer when they're done
+            You have access to these tools:
+            - **start_timer**  Start the timer
+            - **get_elapsed**  Check how long has elapsed
+            - **stop_timer**  Stop the timer and get the total time
 
             Guidelines:
-            - Be positive and motivating, never judgmental about pace or distance.
-            - Use the timer tools to give real-time updates.
-            - Celebrate milestones (first minute, halfway, finish).
-            - If they seem tired, remind them it's okay to walk.
+            - Call start_timer when the user is ready to begin.
+            - Use get_elapsed to give updates when asked.
+            - Call stop_timer when the user is done.
             """;
     }
 }

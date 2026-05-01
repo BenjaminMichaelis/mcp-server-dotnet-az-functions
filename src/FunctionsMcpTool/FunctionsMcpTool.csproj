@@ -44,4 +44,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\FunctionsMcpTool.ServiceDefaults\FunctionsMcpTool.ServiceDefaults.csproj" />
   </ItemGroup>
+
+  <Target Name="NpmBuildApps" BeforeTargets="Publish">
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(MSBuildProjectDirectory)/app" />
+    <Exec Command="npm run build" WorkingDirectory="$(MSBuildProjectDirectory)/app" />
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(MSBuildProjectDirectory)/app-weather" />
+    <Exec Command="npm run build" WorkingDirectory="$(MSBuildProjectDirectory)/app-weather" />
+  </Target>
+
 </Project>

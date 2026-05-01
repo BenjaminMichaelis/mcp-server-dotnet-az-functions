@@ -371,3 +371,5 @@ FodyWeavers.xsd
 .bicepparam
 .snapshot.json
 .playwright-mcp/
+
+src/McpRunTimer/app/dist/

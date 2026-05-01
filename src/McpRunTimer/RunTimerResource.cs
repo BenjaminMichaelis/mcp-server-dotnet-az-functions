@@ -7,32 +7,32 @@ namespace McpRunTimer;
 
 public class RunTimerResource(ILogger<RunTimerResource> logger)
 {
-    [Function(nameof(GetRunStatus))]
-    public string GetRunStatus(
+    [Function(nameof(GetTimerStatus))]
+    public string GetTimerStatus(
         [McpResourceTrigger(
-            "run://status",
-            "Run Status",
-            Description = "Returns all active and recent run timers.",
+            "timer://status",
+            "Timer Status",
+            Description = "Returns all active and recent timers.",
             MimeType = "application/json")]
             ResourceInvocationContext context)
     {
-        logger.LogInformation("Run status resource invoked.");
+        logger.LogInformation("Timer status resource invoked.");
 
-        var runs = RunTimerTools.Runs.Values
-            .OrderByDescending(r => r.StartedAtUtc)
+        var timers = RunTimerTools.Timers.Values
+            .OrderByDescending(t => t.StartedAtUtc)
             .Take(10)
-            .Select(r => new
+            .Select(t => new
             {
-                runId = r.Id,
-                state = r.IsRunning ? "running" : "completed",
-                elapsed = FormatDuration(r.Elapsed),
-                startedAt = r.StartedAtUtc.ToString("O"),
-                completedAt = r.CompletedAtUtc?.ToString("O")
+                timerId = t.Id,
+                state = t.IsRunning ? "running" : "completed",
+                elapsed = FormatDuration(t.Elapsed),
+                startedAt = t.StartedAtUtc.ToString("O"),
+                completedAt = t.CompletedAtUtc?.ToString("O")
             });
 
         return JsonSerializer.Serialize(new
         {
-            runs,
+            timers,
             checkedAt = DateTime.UtcNow.ToString("O")
         });
     }

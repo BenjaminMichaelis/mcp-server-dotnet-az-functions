@@ -13,6 +13,7 @@
   This would typically list all NuGet packages used within this solution.
   -->
   <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="13.2.4" />
     <PackageVersion Include="Aspire.Hosting.Azure.Functions" Version="13.2.4" />
     <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.2.4" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />

@@ -7,16 +7,18 @@ using Microsoft.Extensions.Logging;
 
 namespace McpRunTimer;
 
-public sealed class RunState
+public sealed class TimerState
 {
     public string Id { get; }
+    public string SessionId { get; }
     public Stopwatch Stopwatch { get; } = new();
     public DateTime StartedAtUtc { get; }
     public DateTime? CompletedAtUtc { get; private set; }
 
-    public RunState(string id)
+    public TimerState(string id, string sessionId)
     {
         Id = id;
+        SessionId = sessionId;
         StartedAtUtc = DateTime.UtcNow;
         Stopwatch.Start();
     }
@@ -33,74 +35,117 @@ public sealed class RunState
 
 public class RunTimerTools(ILogger<RunTimerTools> logger)
 {
-    internal static readonly ConcurrentDictionary<string, RunState> Runs = new();
+    internal static readonly ConcurrentDictionary<string, TimerState> Timers = new();
 
-    [Function(nameof(StartRun))]
-    public string StartRun(
-        [McpToolTrigger("start_run", "Starts tracking your run time. Call this when you begin a run.")]
+    [Function(nameof(OpenTimer))]
+    public string OpenTimer(
+        [McpToolTrigger("open_timer", "Opens the timer widget. Use start_timer, get_elapsed, and stop_timer to control it.")]
             ToolInvocationContext context)
     {
+        return "{\"state\":\"idle\"}";
+    }
+
+    [Function(nameof(StartTimer))]
+    public string StartTimer(
+        [McpToolTrigger("start_timer", "Starts a new timer and returns the timer ID.")]
+            ToolInvocationContext context)
+    {
+        var sessionId = context.SessionId ?? "";
         var id = Guid.NewGuid().ToString("N")[..8];
-        var run = new RunState(id);
-        Runs[id] = run;
+        var timer = new TimerState(id, sessionId);
+        Timers[id] = timer;
 
-        logger.LogInformation("Run {RunId} started.", id);
+        logger.LogInformation("Timer {TimerId} started (session {SessionId}).", id, sessionId);
 
-        return $"Timer started at {run.StartedAtUtc:HH:mm:ss} UTC. Your run ID is: {id}";
+        return $"Timer started at {timer.StartedAtUtc:HH:mm:ss} UTC. Your timer ID is: {id}";
     }
 
     [Function(nameof(GetElapsed))]
     public string GetElapsed(
-        [McpToolTrigger("get_elapsed", "Returns how long the current run has been going.")]
+        [McpToolTrigger("get_elapsed", "Returns the elapsed time for a timer.")]
             ToolInvocationContext context,
-        [McpToolProperty("run_id", "The run ID returned by start_run.", true)]
-            string runId)
+        [McpToolProperty("timer_id", "The timer ID returned by start_timer.", true)]
+            string timerId)
     {
-        if (!Runs.TryGetValue(runId, out var run))
+        if (!Timers.TryGetValue(timerId, out var timer))
         {
-            return $"No run found with ID '{runId}'. Use start_run to begin tracking.";
+            return $"No timer found with ID '{timerId}'. Use start_timer first.";
         }
 
-        var elapsed = run.Elapsed;
-        logger.LogInformation("Run {RunId} elapsed: {Elapsed}", runId, elapsed);
+        var sessionId = context.SessionId ?? "";
+        if (timer.SessionId != sessionId)
+        {
+            return $"No timer found with ID '{timerId}'. Use start_timer first.";
+        }
+
+        var elapsed = timer.Elapsed;
+        logger.LogInformation("Timer {TimerId} elapsed: {Elapsed}", timerId, elapsed);
 
         return JsonSerializer.Serialize(new
         {
-            runId = run.Id,
-            state = run.IsRunning ? "running" : "completed",
+            timerId = timer.Id,
+            state = timer.IsRunning ? "running" : "completed",
             elapsed = FormatDuration(elapsed),
             elapsedSeconds = elapsed.TotalSeconds,
-            startedAt = run.StartedAtUtc.ToString("O")
+            startedAt = timer.StartedAtUtc.ToString("O")
         });
     }
 
-    [Function(nameof(StopRun))]
-    public string StopRun(
-        [McpToolTrigger("stop_run", "Stops the run timer and returns your total time.")]
+    [Function(nameof(StopTimer))]
+    public string StopTimer(
+        [McpToolTrigger("stop_timer", "Stops a timer and returns the total elapsed time.")]
             ToolInvocationContext context,
-        [McpToolProperty("run_id", "The run ID returned by start_run.", true)]
-            string runId)
+        [McpToolProperty("timer_id", "The timer ID returned by start_timer.", true)]
+            string timerId)
     {
-        if (!Runs.TryGetValue(runId, out var run))
+        if (!Timers.TryGetValue(timerId, out var timer))
         {
-            return $"No run found with ID '{runId}'. Use start_run first.";
+            return $"No timer found with ID '{timerId}'. Use start_timer first.";
         }
 
-        if (!run.IsRunning)
+        var sessionId = context.SessionId ?? "";
+        if (timer.SessionId != sessionId)
         {
-            return $"Run '{runId}' is already stopped. Total: {FormatDuration(run.Elapsed)}";
+            return $"No timer found with ID '{timerId}'. Use start_timer first.";
         }
 
-        run.Stop();
-        logger.LogInformation("Run {RunId} stopped. Total: {Elapsed}", runId, run.Elapsed);
+        if (!timer.IsRunning)
+        {
+            return $"Timer '{timerId}' is already stopped. Total: {FormatDuration(timer.Elapsed)}";
+        }
+
+        timer.Stop();
+        logger.LogInformation("Timer {TimerId} stopped. Total: {Elapsed}", timerId, timer.Elapsed);
 
         return $"""
-            Run complete!
-            Run ID:   {run.Id}
-            Started:  {run.StartedAtUtc:HH:mm:ss} UTC
-            Stopped:  {run.CompletedAtUtc:HH:mm:ss} UTC
-            Total:    {FormatDuration(run.Elapsed)}
+            Timer complete!
+            Timer ID: {timer.Id}
+            Started:  {timer.StartedAtUtc:HH:mm:ss} UTC
+            Stopped:  {timer.CompletedAtUtc:HH:mm:ss} UTC
+            Total:    {FormatDuration(timer.Elapsed)}
             """;
+    }
+
+    [Function(nameof(GetSessionTimers))]
+    public string GetSessionTimers(
+        [McpToolTrigger("get_session_timers", "Returns all timers started in the current session.")]
+            ToolInvocationContext context)
+    {
+        var sessionId = context.SessionId ?? "";
+
+        var sessionTimers = Timers.Values
+            .Where(t => t.SessionId == sessionId)
+            .OrderByDescending(t => t.StartedAtUtc)
+            .Select(t => new
+            {
+                timerId = t.Id,
+                state = t.IsRunning ? "running" : "completed",
+                elapsed = FormatDuration(t.Elapsed),
+                elapsedSeconds = t.Elapsed.TotalSeconds,
+                startedAt = t.StartedAtUtc.ToString("O")
+            });
+
+        return JsonSerializer.Serialize(new { timers = sessionTimers });
     }
 
     private static string FormatDuration(TimeSpan ts) =>
