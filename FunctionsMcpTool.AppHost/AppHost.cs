@@ -1,8 +1,10 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 const string McpEndpointPath = "/runtime/webhooks/mcp";
-const int McpInspectorClientPort = 6284;
-const int McpInspectorServerPort = 6287;
+const int McpInspectorTimerClientPort = 6284;
+const int McpInspectorTimerServerPort = 6287;
+const int McpInspectorShowcaseClientPort = 6285;
+const int McpInspectorShowcaseServerPort = 6288;
 
 // UI build paths
 var showcaseAppUiPath = Path.Combine("..", "src", "FunctionsMcpTool", "app");
@@ -33,12 +35,18 @@ var timerAppUiWatch = builder.AddJavaScriptApp("timer-app-ui-watch", timerAppUiP
     .WaitForCompletion(timerAppUiBuild);
 
 // ─── Function App projects ─────────────────────────────────────────
+var funcStorage = builder.AddAzureStorage("func-storage").RunAsEmulator();
+
 var mcpRunTimer = builder.AddAzureFunctionsProject<Projects.McpRunTimer>("mcp-run-timer")
+    .WithHostStorage(funcStorage)
+    .WithHostStorage(funcStorage)
     .WithExternalHttpEndpoints()
     .WaitForCompletion(timerAppUiBuild)
     .WaitForStart(timerAppUiWatch);
 
 var functionsMcpTool = builder.AddAzureFunctionsProject<Projects.FunctionsMcpTool>("functions-mcp-tool")
+    .WithHostStorage(funcStorage)
+    .WithHostStorage(funcStorage)
     .WithExternalHttpEndpoints()
     .WaitForCompletion(showcaseAppUiBuild)
     .WaitForStart(showcaseAppUiWatch)
@@ -53,21 +61,20 @@ showcaseAppUiWatch.WithParentRelationship(functionsMcpTool);
 showcaseWeatherUiBuild.WithParentRelationship(functionsMcpTool);
 showcaseWeatherUiWatch.WithParentRelationship(functionsMcpTool);
 
-// ─── MCP Inspector ─────────────────────────────────────────────────
-builder.AddMcpInspector("mcp-inspector", options =>
+// ─── MCP Inspectors (one per server) ──────────────────────────────
+builder.AddMcpInspector("mcp-inspector-timer", options =>
     {
-        options.ClientPort = McpInspectorClientPort;
-        options.ServerPort = McpInspectorServerPort;
+        options.ClientPort = McpInspectorTimerClientPort;
+        options.ServerPort = McpInspectorTimerServerPort;
         options.InspectorVersion = "0.21.2";
     })
     .WithMcpServer(mcpRunTimer, isDefault: true, path: McpEndpointPath)
-    .WithMcpServer(functionsMcpTool, isDefault: false, path: McpEndpointPath)
     .WithUrls(context =>
     {
         foreach (var url in context.Urls)
         {
             var isClientUrl = string.Equals(url.DisplayText, "Client", StringComparison.Ordinal) ||
-                url.Url.Contains($":{McpInspectorClientPort}/", StringComparison.Ordinal);
+                url.Url.Contains($":{McpInspectorTimerClientPort}/", StringComparison.Ordinal);
 
             if (!isClientUrl ||
                 url.Url.Contains("MCP_PROXY_PORT=", StringComparison.Ordinal))
@@ -76,7 +83,34 @@ builder.AddMcpInspector("mcp-inspector", options =>
             }
 
             var separator = url.Url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
-            url.Url = $"{url.Url}{separator}MCP_PROXY_PORT={McpInspectorServerPort}";
+            url.Url = $"{url.Url}{separator}MCP_PROXY_PORT={McpInspectorTimerServerPort}";
+        }
+
+        return Task.CompletedTask;
+    });
+
+builder.AddMcpInspector("mcp-inspector-showcase", options =>
+    {
+        options.ClientPort = McpInspectorShowcaseClientPort;
+        options.ServerPort = McpInspectorShowcaseServerPort;
+        options.InspectorVersion = "0.21.2";
+    })
+    .WithMcpServer(functionsMcpTool, isDefault: true, path: McpEndpointPath)
+    .WithUrls(context =>
+    {
+        foreach (var url in context.Urls)
+        {
+            var isClientUrl = string.Equals(url.DisplayText, "Client", StringComparison.Ordinal) ||
+                url.Url.Contains($":{McpInspectorShowcaseClientPort}/", StringComparison.Ordinal);
+
+            if (!isClientUrl ||
+                url.Url.Contains("MCP_PROXY_PORT=", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var separator = url.Url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
+            url.Url = $"{url.Url}{separator}MCP_PROXY_PORT={McpInspectorShowcaseServerPort}";
         }
 
         return Task.CompletedTask;

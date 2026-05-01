@@ -12,39 +12,27 @@ public class RunTimerResource(ILogger<RunTimerResource> logger)
         [McpResourceTrigger(
             "run://status",
             "Run Status",
-            Description = "Returns the current run timer state including elapsed time.",
+            Description = "Returns all active and recent run timers.",
             MimeType = "application/json")]
             ResourceInvocationContext context)
     {
         logger.LogInformation("Run status resource invoked.");
 
-        var startTime = RunTimerTools.StartTimeUtc;
-        var endTime = RunTimerTools.EndTimeUtc;
-
-        string state;
-        string? elapsed = null;
-
-        if (startTime is null)
-        {
-            state = "idle";
-        }
-        else if (endTime is null)
-        {
-            state = "running";
-            elapsed = FormatDuration(DateTime.UtcNow - startTime.Value);
-        }
-        else
-        {
-            state = "completed";
-            elapsed = FormatDuration(endTime.Value - startTime.Value);
-        }
+        var runs = RunTimerTools.Runs.Values
+            .OrderByDescending(r => r.StartedAtUtc)
+            .Take(10)
+            .Select(r => new
+            {
+                runId = r.Id,
+                state = r.IsRunning ? "running" : "completed",
+                elapsed = FormatDuration(r.Elapsed),
+                startedAt = r.StartedAtUtc.ToString("O"),
+                completedAt = r.CompletedAtUtc?.ToString("O")
+            });
 
         return JsonSerializer.Serialize(new
         {
-            state,
-            elapsed,
-            startedAt = startTime?.ToString("O"),
-            completedAt = endTime?.ToString("O"),
+            runs,
             checkedAt = DateTime.UtcNow.ToString("O")
         });
     }

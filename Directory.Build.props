@@ -1,5 +1,8 @@
 <Project>
   <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>14</LangVersion>
     <ArtifactsPath>$(MSBuildThisFileDirectory)out</ArtifactsPath>
     <ArtifactsPublishOutputName>pub</ArtifactsPublishOutputName>
     <ArtifactsPackageOutputName>pkg</ArtifactsPackageOutputName>

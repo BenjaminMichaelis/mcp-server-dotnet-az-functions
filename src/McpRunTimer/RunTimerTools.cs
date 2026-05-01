@@ -1,82 +1,106 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
 using Microsoft.Extensions.Logging;
 
 namespace McpRunTimer;
 
+public sealed class RunState
+{
+    public string Id { get; }
+    public Stopwatch Stopwatch { get; } = new();
+    public DateTime StartedAtUtc { get; }
+    public DateTime? CompletedAtUtc { get; private set; }
+
+    public RunState(string id)
+    {
+        Id = id;
+        StartedAtUtc = DateTime.UtcNow;
+        Stopwatch.Start();
+    }
+
+    public void Stop()
+    {
+        Stopwatch.Stop();
+        CompletedAtUtc = DateTime.UtcNow;
+    }
+
+    public bool IsRunning => Stopwatch.IsRunning;
+    public TimeSpan Elapsed => Stopwatch.Elapsed;
+}
+
 public class RunTimerTools(ILogger<RunTimerTools> logger)
 {
-    private static DateTime? _startTime;
-    private static DateTime? _endTime;
-
-    internal static DateTime? StartTimeUtc => _startTime;
-    internal static DateTime? EndTimeUtc => _endTime;
+    internal static readonly ConcurrentDictionary<string, RunState> Runs = new();
 
     [Function(nameof(StartRun))]
     public string StartRun(
         [McpToolTrigger("start_run", "Starts tracking your run time. Call this when you begin a run.")]
             ToolInvocationContext context)
     {
-        logger.LogInformation("Starting run timer.");
+        var id = Guid.NewGuid().ToString("N")[..8];
+        var run = new RunState(id);
+        Runs[id] = run;
 
-        _startTime = DateTime.UtcNow;
-        _endTime = null;
+        logger.LogInformation("Run {RunId} started.", id);
 
-        return $"Timer started at {_startTime:HH:mm:ss} UTC. Go run!";
+        return $"Timer started at {run.StartedAtUtc:HH:mm:ss} UTC. Your run ID is: {id}";
     }
-
-    private const string ElapsedToolMetadata = """
-        {
-            "ui": {
-                "resourceUri": "ui://timer/index.html"
-            }
-        }
-        """;
 
     [Function(nameof(GetElapsed))]
     public string GetElapsed(
         [McpToolTrigger("get_elapsed", "Returns how long the current run has been going.")]
-        [McpMetadata(ElapsedToolMetadata)]
-            ToolInvocationContext context)
+            ToolInvocationContext context,
+        [McpToolProperty("run_id", "The run ID returned by start_run.", true)]
+            string runId)
     {
-        if (_startTime is null)
+        if (!Runs.TryGetValue(runId, out var run))
         {
-            return "No run in progress. Use start_run to begin tracking.";
+            return $"No run found with ID '{runId}'. Use start_run to begin tracking.";
         }
 
-        var end = _endTime ?? DateTime.UtcNow;
-        var elapsed = end - _startTime.Value;
+        var elapsed = run.Elapsed;
+        logger.LogInformation("Run {RunId} elapsed: {Elapsed}", runId, elapsed);
 
-        logger.LogInformation("Elapsed time: {Elapsed}", elapsed);
-
-        return _endTime is not null
-            ? $"Run completed. Total time: {FormatDuration(elapsed)}"
-            : $"Running for {FormatDuration(elapsed)}";
+        return JsonSerializer.Serialize(new
+        {
+            runId = run.Id,
+            state = run.IsRunning ? "running" : "completed",
+            elapsed = FormatDuration(elapsed),
+            elapsedSeconds = elapsed.TotalSeconds,
+            startedAt = run.StartedAtUtc.ToString("O")
+        });
     }
 
     [Function(nameof(StopRun))]
     public string StopRun(
         [McpToolTrigger("stop_run", "Stops the run timer and returns your total time.")]
-            ToolInvocationContext context)
+            ToolInvocationContext context,
+        [McpToolProperty("run_id", "The run ID returned by start_run.", true)]
+            string runId)
     {
-        if (_startTime is null)
+        if (!Runs.TryGetValue(runId, out var run))
         {
-            return "No run in progress. Use start_run first.";
+            return $"No run found with ID '{runId}'. Use start_run first.";
         }
 
-        _endTime = DateTime.UtcNow;
-        var elapsed = _endTime.Value - _startTime.Value;
+        if (!run.IsRunning)
+        {
+            return $"Run '{runId}' is already stopped. Total: {FormatDuration(run.Elapsed)}";
+        }
 
-        logger.LogInformation("Run stopped. Total time: {Elapsed}", elapsed);
+        run.Stop();
+        logger.LogInformation("Run {RunId} stopped. Total: {Elapsed}", runId, run.Elapsed);
 
-        var summary = $"""
+        return $"""
             Run complete!
-            Started:  {_startTime:HH:mm:ss} UTC
-            Stopped:  {_endTime:HH:mm:ss} UTC
-            Total:    {FormatDuration(elapsed)}
+            Run ID:   {run.Id}
+            Started:  {run.StartedAtUtc:HH:mm:ss} UTC
+            Stopped:  {run.CompletedAtUtc:HH:mm:ss} UTC
+            Total:    {FormatDuration(run.Elapsed)}
             """;
-
-        return summary;
     }
 
     private static string FormatDuration(TimeSpan ts) =>
