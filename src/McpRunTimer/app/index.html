@@ -84,6 +84,38 @@
             color: var(--muted);
             font-style: italic;
         }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-start {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-stop {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        [data-theme="light"] .btn-stop { background: #dc2626; }
     </style>
 </head>
 <body>
@@ -91,6 +123,10 @@
         <div class="icon" id="icon">🏃</div>
         <div class="timer" id="timer">--:--</div>
         <div class="state" id="state">Waiting for data...</div>
+        <div class="controls">
+            <button class="btn btn-start" id="btn-start">Start</button>
+            <button class="btn btn-stop" id="btn-stop" disabled>Stop</button>
+        </div>
         <div class="details" id="details" style="display:none">
             <div class="detail-row">
                 <span class="detail-label">Started</span>
