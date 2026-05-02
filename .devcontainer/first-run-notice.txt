@@ -3,10 +3,9 @@ This environment includes .NET 10, the Aspire CLI, Docker-in-Docker, Azure Funct
 
 Run the full local experience with the Aspire AppHost:
 ```
-cd src/McpWeatherApp/app && npm install && npm run build && cd ../../..
-cd src/FunctionsMcpApp/app && npm install && npm run build && cd ../../..
-aspire start --isolated
+aspire run
 ```
+The Aspire dashboard will open automatically in your browser (port 15279).
 
 To run a single Function app instead:
 ```

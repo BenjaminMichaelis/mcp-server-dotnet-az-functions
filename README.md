@@ -131,10 +131,9 @@ Use this when you want to step through the debugger or test a single project end
     func start
     ```
 
-    > To run Resources and Prompts alongside Tools, open extra terminals:
+    > To run McpRunTimer alongside Tools, open an extra terminal:
     > ```shell
-    > cd src/FunctionsMcpResources && func start --port 7072
-    > cd src/FunctionsMcpPrompts  && func start --port 7073
+    > cd src/McpRunTimer && func start --port 7072
     > ```
 
 1. Open **`.vscode/mcp.json`**, find the server called **`local-mcp-function`**, and click **Start** above the name. The endpoint is pre-configured:
@@ -212,12 +211,6 @@ azd env set VNET_ENABLED true
 
 ### Step 3: Provision and deploy
 
-1. Choose which MCP server to deploy:
-
-    ```shell
-    azd env set DEPLOY_SERVICE <tools | resources | prompts | weather | apps>
-    ```
-
 1. Provision Azure resources:
 
     ```shell
@@ -226,14 +219,11 @@ azd env set VNET_ENABLED true
 
     When prompted, choose your subscription, an Azure region, and `false` for virtual network resources to keep the initial deployment simple.
 
-1. Deploy your chosen service:
+1. Deploy:
 
     ```shell
     azd deploy --service tools      # MCP Tools (with Entra auth)
-    azd deploy --service resources  # MCP Resources
-    azd deploy --service prompts    # MCP Prompts
-    azd deploy --service weather    # Weather App
-    azd deploy --service apps       # Fluent API App
+    azd deploy --service timer      # MCP Run Timer
     ```
 
 ### Step 4: Connect to the remote MCP server
