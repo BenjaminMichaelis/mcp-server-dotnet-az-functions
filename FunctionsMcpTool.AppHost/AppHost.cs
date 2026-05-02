@@ -42,6 +42,7 @@ if (!isPublishMode)
     timerAppUiBuild.WithParentRelationship(mcpRunTimer);
     timerAppUiWatch.WithParentRelationship(mcpRunTimer);
 
+// https://github.com/modelcontextprotocol/inspector
     builder.AddFunctionsMcpInspector("mcp-inspector-timer", mcpRunTimer,
         McpInspectorTimerClientPort, McpInspectorTimerServerPort, McpEndpointPath);
 }

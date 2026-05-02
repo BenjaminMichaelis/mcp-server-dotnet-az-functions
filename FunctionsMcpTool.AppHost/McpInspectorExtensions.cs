@@ -1,5 +1,3 @@
-using Aspire.Hosting.ApplicationModel;
-
 internal static class McpInspectorExtensions
 {
     extension(IDistributedApplicationBuilder builder)
