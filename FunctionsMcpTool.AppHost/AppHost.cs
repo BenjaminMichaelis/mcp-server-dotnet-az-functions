@@ -5,6 +5,8 @@ var isPublishMode = builder.ExecutionContext.IsPublishMode;
 builder.AddAzureContainerAppEnvironment("aca-env");
 
 const string McpEndpointPath = "/runtime/webhooks/mcp";
+const int McpRunTimerPort = 63007;
+const int FunctionsMcpToolPort = 7071;
 const int McpInspectorTimerClientPort = 6284;
 const int McpInspectorTimerServerPort = 6287;
 const int McpInspectorShowcaseClientPort = 6285;
@@ -21,7 +23,8 @@ var funcStorage = builder.AddAzureStorage("func-storage").RunAsEmulator();
 // ─── mcp-run-timer ────────────────────────────────────────────────
 var mcpRunTimer = builder.AddAzureFunctionsProject<Projects.McpRunTimer>("mcp-run-timer")
     .WithHostStorage(funcStorage)
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithEndpoint("http", endpoint => endpoint.Port = McpRunTimerPort);
 
 if (!isPublishMode)
 {
@@ -46,7 +49,8 @@ if (!isPublishMode)
 // ─── functions-mcp-tool ───────────────────────────────────────────
 var functionsMcpTool = builder.AddAzureFunctionsProject<Projects.FunctionsMcpTool>("functions-mcp-tool")
     .WithHostStorage(funcStorage)
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithEndpoint("http", endpoint => endpoint.Port = FunctionsMcpToolPort);
 
 if (!isPublishMode)
 {

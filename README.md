@@ -136,7 +136,7 @@ Use this when you want to step through the debugger or test a single project end
     > cd src/McpRunTimer && func start --port 7072
     > ```
 
-1. Open **`.vscode/mcp.json`**, find the server called **`local-mcp-function`**, and click **Start** above the name. The endpoint is pre-configured:
+1. Open **`.vscode/mcp.json`**, find the server called **`local-mcp-showcase`**, and click **Start** above the name. The endpoint is pre-configured:
 
     ```
     http://localhost:7071/runtime/webhooks/mcp

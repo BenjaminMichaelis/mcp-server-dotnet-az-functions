@@ -65,7 +65,7 @@ func start
 
 ### Option A: VS Code with GitHub Copilot
 
-1. Open **`.vscode/mcp.json`** in the workspace root. Find the server called **`local-mcp-function`** and click **Start** above the name. It points to:
+1. Open **`.vscode/mcp.json`** in the workspace root. Find the server called **`local-mcp-showcase`** and click **Start** above the name. It points to:
 
    ```
    http://localhost:7071/runtime/webhooks/mcp

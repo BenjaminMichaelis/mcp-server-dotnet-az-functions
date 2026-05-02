@@ -15,6 +15,14 @@
       "type": "http",
       "url": "http://localhost:7071/runtime/webhooks/mcp"
     },
+    "local-mcp-showcase": {
+      "type": "http",
+      "url": "http://localhost:7071/runtime/webhooks/mcp"
+    },
+    "local-mcp-run-timer": {
+      "type": "http",
+      "url": "http://localhost:63007/runtime/webhooks/mcp"
+    },
     "aspire": {
       "type": "stdio",
       "command": "aspire",
@@ -23,12 +31,20 @@
         "mcp"
       ]
     },
-    "essentialcsharpdev": {
-      "url": "https://dev.essentialcsharp.com/mcp",
+    "essentialcsharp": {
+      "url": "https://essentialcsharp.com/mcp",
       "type": "http",
       "headers": {
-        "Authorization": "Bearer mcp_5a6FI4Pvf_9kdTYtZ1QBPqPUhUxs3YqBqmMQscSXO2Q"
+        "Authorization": "Bearer ${input:essentialcsharp-token}"
       }
     }
-  }
+  },
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "essentialcsharp-token",
+      "description": "Essential C# MCP Bearer Token",
+      "password": true
+    }
+  ]
 }
